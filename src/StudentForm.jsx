@@ -60,7 +60,7 @@ function StudentForm() {
   };
 
   return (
-    <div className="container mt-3 p-3 shadow rounded">
+    <div className="container mt-3 p-3 shadow rounded border-1 border-dark">
       <h1 className="mb-4">Student Form</h1>
       <form onSubmit={studentForm.handleSubmit}>
         <div className="mb-3">
