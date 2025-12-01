@@ -1,114 +1,227 @@
-import { useFormik } from "formik"
-import React from "react"
-import * as yup from 'yup';
+import React from "react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import './StudentForm.css';
 
 function StudentForm() {
+  const [submitData, setSubmitData] = React.useState([]);
+
   const studentForm = useFormik({
     initialValues: {
-      FirstName: "",
-      LastName: "",
-      Password: "",
-      Gender: "",
-      Age: 0,
-      Techs: "",
-      Country: ""
+      firstname: "",
+      lastname: "",
+      password: "",
+      gender: "",
+      age: "",
+      techs: [],
+      country: "",
     },
 
-    validationSchema: yup.object({
-      FirstName: yup.string().required("FirstName is Mandatory"),
-      Gender: yup.string().required(),
-      LastName: yup.string().required().test("checkmax7","max 7 letters",(value,context)=>{
-        // console.log(value);
-        // console.log(context);
-        if(value.length ==7){
-          return true;
-        }
-      }),
-      Password:yup.string().required().matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,16}$/,{message:"Hi"})
+    validationSchema: Yup.object({
+      firstname: Yup.string()
+        .required("Firstname is mandatory")
+        .max(7, "Maximum 10 letters allowed"),
+      lastname: Yup.string().required("Lastname is mandatory"),
+      password: Yup.string()
+        .required("Password is required")
+        .matches(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,16}$/,
+          "Password must include uppercase, lowercase, number, special character and 8-16 chars"
+        ),
+      gender: Yup.string().required("Gender is required"),
+      age: Yup.number()
+        .required("Age is required")
+        .test("checkAge", "Not eligible", function (value) {
+          const gender = this.parent.gender;
+          if (gender === "male" && value === 25) return true;
+          if (gender === "female" && value === 21) return true;
+          return false;
+        }),
+      country: Yup.string().required("Country is required"),
+      techs: Yup.array().min(1, "Select at least one technology"),
     }),
-    Age:yup.string().test("checkage","Not Eligible",(value,context)=>{
-      var reg=/^\d+$/;
-      if(reg.test(value)){
-        if(context.parent.Gender=="Male" && value==25){
-          return true;
-        }
-        if(context.parent.Gender=="Female" && value==21){
-          return true;
-        }
-        else{
-          return false; 
-        }
-      }
-    }),
-    onSubmit: (values) => {
-      console.log(values);
-    }
+
+    onSubmit: (values, { resetForm }) => {
+      setSubmitData([...submitData, values]);
+      resetForm();
+    },
   });
+
+  const handleTechChange = (e) => {
+    const { value, checked } = e.target;
+    if (checked) {
+      studentForm.setFieldValue("techs", [...studentForm.values.techs, value]);
+    } else {
+      studentForm.setFieldValue(
+        "techs",
+        studentForm.values.techs.filter((t) => t !== value)
+      );
+    }
+  };
+
   return (
-    <div className="border border-2 border-danger-subtle p-3 m-3">
-      <h1>Student Form Here:</h1>
-      <p>{JSON.stringify(studentForm.errors)}</p>  
-      {/* <p>{JSON.stringify(studentForm.touched)}</p> */}
+    <div className="container mt-3 p-3 shadow rounded">
+      <h1 className="mb-4">Student Form</h1>
       <form onSubmit={studentForm.handleSubmit}>
+        <div className="mb-3">
+          <label>Firstname:</label>
+          <input
+            type="text"
+            name="firstname"
+            className="form-control"
+            onChange={studentForm.handleChange}
+            onBlur={studentForm.handleBlur}
+            value={studentForm.values.firstname}
+          />
+          {studentForm.touched.firstname && studentForm.errors.firstname && (
+            <div className="text-danger">{studentForm.errors.firstname}</div>
+          )}
+        </div>
 
-        <b>FirstName:</b>
-        <input type="text"  name="FirstName" onChange={studentForm.handleChange} onBlur={studentForm.handleBlur}/>
-        <>{studentForm.touched.FirstName && studentForm.errors.FirstName && (<div>FirstName is Mandatory</div>)}</>
-        <>{studentForm.errors.FirstName && (<div>Must be 3 Characters</div>)}</>
-        <br></br>
-        <br></br>
+        <div className="mb-3">
+          <label>Lastname:</label>
+          <input
+            type="text"
+            name="lastname"
+            className="form-control"
+            onChange={studentForm.handleChange}
+            onBlur={studentForm.handleBlur}
+            value={studentForm.values.lastname}
+          />
+          {studentForm.touched.lastname && studentForm.errors.lastname && (
+            <div className="text-danger">{studentForm.errors.lastname}</div>
+          )}
+        </div>
 
-        <b>LastName:</b>
-        <input type="text" name="LastName" onChange={studentForm.handleChange} onBlur={studentForm.handleBlur} />
-        <>{studentForm.errors.LastName && (<div>Max 5 Alhabets</div>)}</>
-        <br></br>
-        <br></br>
+        <div className="mb-3">
+          <label>Password:</label>
+          <input
+            type="password"
+            name="password"
+            className="form-control"
+            onChange={studentForm.handleChange}
+            value={studentForm.values.password}
+          />
+          {studentForm.touched.password && studentForm.errors.password && (
+            <div className="text-danger">{studentForm.errors.password}</div>
+          )}
+        </div>
 
-        <b>Password</b>
-        <input type="Password" name="Password" onChange={studentForm.handleChange} onBlur={studentForm.handleBlur} />
-        <br></br>
-        <br></br>
+        <div className="mb-3">
+          <label>Gender:</label> <br />
+          {["male", "female", "others"].map((g) => (
+            <div className="form-check form-check-inline" key={g}>
+              <input
+                type="radio"
+                name="gender"
+                value={g}
+                className="form-check-input"
+                onChange={studentForm.handleChange}
+                checked={studentForm.values.gender === g}
+              />
+              <label className="form-check-label">{g}</label>
+            </div>
+          ))}
+          {studentForm.touched.gender && studentForm.errors.gender && (
+            <div className="text-danger">{studentForm.errors.gender}</div>
+          )}
+        </div>
 
-        <b>Gender:</b>
-        <input type="radio" name="Gender" value="Male" onChange={studentForm.handleChange} />Male
-        <input type="radio" name="Gender" value="Female" onChange={studentForm.handleChange} />Female
-        <input type="radio" name="Gender" value="Others" onChange={studentForm.handleChange} />Others
-        {studentForm.errors.Gender && (<div>Please Select the Gneder</div>)}
-        <br></br>
-        <br></br>
+        <div className="mb-3">
+          <label>Age:</label>
+          <input
+            type="number"
+            name="age"
+            className="form-control"
+            onChange={studentForm.handleChange}
+            value={studentForm.values.age}
+          />
+          {studentForm.touched.age && studentForm.errors.age && (
+            <div className="text-danger">{studentForm.errors.age}</div>
+          )}
+        </div>
 
-        <b>Age:</b>
-        <input type="text" name="Age" onChange={studentForm.handleChange}  onBlur={studentForm.handleBlur} />
-        <br></br>
-        <br></br>
+        <div className="mb-3">
+          <label>Technologies:</label> <br />
+          {["HTML", "CSS", "Javascript", "Nodejs", "Angularjs", "Reactjs"].map(
+            (tech) => (
+              <div className="form-check form-check-inline" key={tech}>
+                <input
+                  type="checkbox"
+                  name="techs"
+                  value={tech}
+                  className="form-check-input"
+                  onChange={handleTechChange}
+                  checked={studentForm.values.techs.includes(tech)}
+                />
+                <label className="form-check-label">{tech}</label>
+              </div>
+            )
+          )}
+          {studentForm.touched.techs && studentForm.errors.techs && (
+            <div className="text-danger">{studentForm.errors.techs}</div>
+          )}
+        </div>
 
-        <b>Technologies:</b>
-        <input type="checkbox" name="Techs" value="HTML" onChange={studentForm.handleChange} />:HTML
-        <input type="checkbox" name="Techs" value="CSS" onChange={studentForm.handleChange} />:CSS
-        <input type="checkbox" name="Techs" value="Javascript" onChange={studentForm.handleChange} />:Javascript
-        <input type="checkbox" name="Techs" value="ReactJs" onChange={studentForm.handleChange} />:ReactJs
-        <input type="checkbox" name="Techs" value="Angular" onChange={studentForm.handleChange} />:Angular
-        <input type="checkbox" name="Techs" value="MernStack" onChange={studentForm.handleChange} />:MernStack
-        <input type="checkbox" name="Techs" value="Bootstrap" onChange={studentForm.handleChange} />:Bootstrap
-        <br></br>
-        <br></br>
+        <div className="mb-3">
+          <label>Country:</label>
+          <select
+            name="country"
+            className="form-select"
+            onChange={studentForm.handleChange}
+            value={studentForm.values.country}
+          >
+            <option value="">Select Country</option>
+            <option value="India">India</option>
+            <option value="America">America</option>
+            <option value="Sweden">Sweden</option>
+            <option value="UK">UK</option>
+          </select>
+          {studentForm.touched.country && studentForm.errors.country && (
+            <div className="text-danger">{studentForm.errors.country}</div>
+          )}
+        </div>
 
-        <b>Country:</b>
-        <select name="Country" onChange={studentForm.handleChange} >
-          <option default value="">Select your Country</option>
-          <option value="India">INDIA</option>
-          <option value="Usa">USA</option>
-          <option value="Uk">UK</option>
-          <option value="Canada">Canada</option>
-          <option value="Australia">Australia</option>
-        </select>
-        <br></br>
-        <br></br>
-
-        <button type="submit" className="btn bg-info-subtle border-info-subtle me-3">Show Data</button>
-        <button onClick={() => (studentForm.resetForm())} type="reset" className="btn bg-warning-subtle border-warning-subtle">ClearForm</button>
+        <button type="submit" className="btn btn-primary me-2">
+          Show Data
+        </button>
+        <button
+          type="reset"
+          className="btn btn-secondary"
+          onClick={() => studentForm.resetForm()}
+        >
+          Clear Data
+        </button>
       </form>
+
+      {submitData.length > 0 && (
+        <table className="table table-bordered mt-4">
+          <thead className="table-dark">
+            <tr>
+              <th>Firstname</th>
+              <th>Lastname</th>
+              <th>Gender</th>
+              <th>Age</th>
+              <th>Technologies</th>
+              <th>Country</th>
+            </tr>
+          </thead>
+          <tbody>
+            {submitData.map((data, i) => (
+              <tr key={i}>
+                <td>{data.firstname}</td>
+                <td>{data.lastname}</td>
+                <td>{data.gender}</td>
+                <td>{data.age}</td>
+                <td>{data.techs.join(", ")}</td>
+                <td>{data.country}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
-  )
+  );
 }
-  export default StudentForm
+
+export default StudentForm;
